@@ -5,21 +5,27 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-
-    <SurfaceView
-        android:id="@+id/sf_video"
-        android:layout_width="match_parent"
-        android:layout_height="211dp" />
-
     <Button
-        android:id="@+id/bt_start"
+        android:id="@+id/bt_start1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="start" />
+        android:text="start1" />
 
     <Button
-        android:id="@+id/bt_stop"
+        android:id="@+id/bt_pause1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="stop" />
+        android:text="pause1" />
+
+    <Button
+        android:id="@+id/bt_start2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="start2" />
+
+    <Button
+        android:id="@+id/bt_pause2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="pause2" />
 </LinearLayout>

@@ -1,23 +1,18 @@
 package com.example.androiddemo;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.PixelFormat;
+import android.graphics.Point;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.media.Image;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
-import android.media.MediaCodecList;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.os.Bundle;
@@ -27,7 +22,9 @@ import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
 
 //import android.media.tv.tuner;
 //import android.media.tv.tuner.filter.Filter;
@@ -39,15 +36,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import static android.graphics.Color.BLACK;
 import static android.media.AudioTrack.WRITE_BLOCKING;
-import static java.lang.Boolean.TRUE;
+import static android.media.MediaCodec.BUFFER_FLAG_KEY_FRAME;
+import static android.media.MediaExtractor.SAMPLE_FLAG_SYNC;
 
-public class TunnelModeTestActivity extends AppCompatActivity {
+public class TunnelModeTestActivity extends Activity {
 
     final String TAG = "TunnelModeTestActivity";
 
     // UI
+    private FrameLayout mSurfaceLayout;
     private SurfaceView mUIVideoSurface;
     private Button mUIButtonStart;
     private Button mUIButtonStop;
@@ -67,17 +65,18 @@ public class TunnelModeTestActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.tunnel_mode_test);
+
+        mContext = getApplicationContext();
 
         verifyStoragePermissions(this);
         SetupUI();
         SetupHandler();
 
-        mContext = getApplicationContext();
+
         AudioManager am = (AudioManager) mContext.getSystemService(AUDIO_SERVICE);
         mAudioSessionId = am.generateAudioSessionId();
         Log.d(TAG,"mAudioSessionId: " + mAudioSessionId);
-
     }
 
     public static final int MSG_START = 0x1;
@@ -109,8 +108,32 @@ public class TunnelModeTestActivity extends AppCompatActivity {
         };
         mHandler = new MyHandler();
     }
+
     void SetupUI()
     {
+
+        WindowManager windowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
+        Point outSize = new Point();
+        windowManager.getDefaultDisplay().getRealSize(outSize);
+        int x = outSize.x;
+        int y = outSize.y;
+        Log.w(TAG, "x = " + x + ",y = " + y);
+
+//        WindowManager windowManager = (WindowManager) mContext.getSystemService(WINDOW_SERVICE);
+//        Display defaultDisplay = windowManager.getDefaultDisplay();
+//        Point point = new Point();
+//        defaultDisplay.getSize(point);
+//        int dispaly_width = point.x;
+//        int display_height = point.y;
+//        Log.i(TAG, "width = " + dispaly_width + ",height = " + display_height);
+
+//        mSurfaceLayout = this.findViewById(R.id.surface_layout);
+//        ViewGroup.MarginLayoutParams margin = new ViewGroup.MarginLayoutParams(mSurfaceLayout.getLayoutParams());
+//        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(margin);
+//        layoutParams.width = dispaly_width;
+//        layoutParams.height = display_height-100;
+//        mSurfaceLayout.setLayoutParams(layoutParams);
+
         mUIVideoSurface = this.findViewById(R.id.sf_video);
         mUIButtonStart = this.findViewById(R.id.bt_start);
         mUIButtonStart.setOnClickListener(new View.OnClickListener() {
@@ -136,18 +159,19 @@ public class TunnelModeTestActivity extends AppCompatActivity {
         @Override
         public void run() {
             super.run();
-            CreateAudioTrack2();
+            AudioTrackPlayStart2();
         }
     }
     public class MyVideoThread extends Thread{
         @Override
         public void run() {
             super.run();
-            CreateMediaCodec();
+            MediaCodecPlayStart();
+//            MediaCodecPlayStart2();
         }
     }
 
-    void CreateAudioTrack() {
+    void AudioTrackPlayStart() {
 
         String MediaVideoPath = "/sdcard/seraphic/Channel_ID_voices_321_ddp_A.mp4";
 //        String MediaVideoPath = "/sdcard/seraphic/trailer.mp4";
@@ -260,7 +284,7 @@ public class TunnelModeTestActivity extends AppCompatActivity {
         }
     }
 
-    void CreateAudioTrack2() {
+    void AudioTrackPlayStart2() {
 
 
 
@@ -291,11 +315,11 @@ public class TunnelModeTestActivity extends AppCompatActivity {
         AudioTrack.Builder atb = new AudioTrack.Builder();
         atb.setAudioAttributes(aa);
         atb.setAudioFormat(af);
-        atb.setSessionId(mAudioSessionId);
+//        atb.setSessionId(mAudioSessionId);
         atb.setTransferMode(AudioTrack.MODE_STREAM);
 
         try {
-            mAudioTrack = new android.media.AudioTrack(aa,af,minBufferSize,AudioTrack.MODE_STREAM,mAudioSessionId);
+            mAudioTrack = new android.media.AudioTrack(aa,af,minBufferSize,AudioTrack.MODE_STREAM, mAudioSessionId);
             // mAudioTrack = atb.build();
         }
         catch (IllegalArgumentException e) {
@@ -387,12 +411,12 @@ public class TunnelModeTestActivity extends AppCompatActivity {
         Log.d(TAG, "loop quit");
     }
 
-
-    void CreateMediaCodec()
-    {
+    void MediaCodecPlayStart() {
 
         String MediaVideoPath = "/sdcard/seraphic/ChID_voices_321_ddp_V.mp4";
 //        String MediaVideoPath = "/sdcard/seraphic/hdr.mp4";
+//        String MediaVideoPath = "/storage/F254-64AF/HTML5/bbb_30fps_1920x1080_8000k.mp4";
+
         File MediaFile = new File(MediaVideoPath);
         String state = Environment.getExternalStorageState(MediaFile);
         Log.d(TAG,"state: " + state);
@@ -432,7 +456,6 @@ public class TunnelModeTestActivity extends AppCompatActivity {
             Log.d(TAG, "decode video,  mime: " + mime + ", width: " + width + ", height: " + height);
 
 
-
 //            mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);
             mediaFormat.setFeatureEnabled(MediaCodecInfo.CodecCapabilities.FEATURE_TunneledPlayback, true);
             mediaFormat.setInteger(MediaFormat.KEY_AUDIO_SESSION_ID, mAudioSessionId);
@@ -461,7 +484,10 @@ public class TunnelModeTestActivity extends AppCompatActivity {
                             Log.d(TAG, "sawInputEOS is true");
                         } else {
                             long pts = mVideoExtractor.getSampleTime();
-                            Log.d(TAG,"queue input buffer size: " + sampleSize + " pts: " + pts);
+                            int flag = mVideoExtractor.getSampleFlags();
+
+                            Log.d(TAG,"queue input buffer size: " + sampleSize + " pts: " + pts + " flag: " + flag);
+
                             mMediaCodec.queueInputBuffer(inputBufferId, 0, sampleSize, pts, 0);
                             if(!mVideoExtractor.advance())
                             {
@@ -513,6 +539,11 @@ public class TunnelModeTestActivity extends AppCompatActivity {
                 mVideoExtractor = null;
             }
         }
+    }
+
+    void MediaCodecPlayStart2()
+    {
+
     }
 
     public static void verifyStoragePermissions(Activity activity) {
